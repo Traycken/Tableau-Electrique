@@ -1,0 +1,1205 @@
+/* Modern CSS styling for Tableau Électrique Configurator */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+:root {
+    --bg-app: #0f172a;
+    --bg-sidebar: #1e293b;
+    --bg-card: rgba(30, 41, 59, 0.7);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-dark: #0f172a;
+    
+    /* Technical Panel Colors for Preview */
+    --panel-plastic: #e2e8f0;
+    --panel-plastic-dark: #cbd5e1;
+    --panel-rail: #94a3b8;
+    --breaker-on: #ef4444;
+    --breaker-off: #22c55e;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* App Layout */
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* Configurator Sidebar */
+.sidebar {
+    width: 420px;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    z-index: 10;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
+}
+
+/* Right side Inspector panel */
+.sidebar-right {
+    width: 380px;
+    border-right: none;
+    border-left: 1px solid var(--border-color);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.25);
+}
+
+/* Outline tree items for element rows in left sidebar */
+.module-outline-item {
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    cursor: grab;
+    user-select: none;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.module-outline-item.selected {
+    border-color: var(--accent) !important;
+    background-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+.module-outline-item:hover {
+    background: rgba(15, 23, 42, 0.55);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.module-outline-item.dragging-sidebar {
+    opacity: 0.4;
+    border: 1px dashed var(--accent);
+}
+
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    background: linear-gradient(to right, #60a5fa, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 5px;
+}
+
+.sidebar-header p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    background-color: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+button {
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--accent);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn-secondary {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+.btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+
+/* Rainbow Slider for Hue selection */
+.rainbow-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(to right, red, orange, yellow, green, cyan, blue, violet, red);
+    outline: none;
+    margin-top: 5px;
+    cursor: pointer;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.rainbow-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #334155;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    margin-top: 0px;
+}
+
+/* Configuration Rows */
+.panel-row-config {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.row-config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.row-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.modules-list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 20px;
+}
+
+.module-config-item {
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.8rem;
+    cursor: grab;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.module-config-item.selected {
+    border-color: var(--accent) !important;
+    background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.module-config-item.dragging-sidebar {
+    opacity: 0.4;
+    border: 1px dashed var(--accent);
+}
+
+.module-config-item.drag-over-sidebar {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: var(--accent);
+}
+
+.module-config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+}
+
+.module-config-header button {
+    pointer-events: auto;
+}
+
+/* Main Preview Area */
+.preview-container {
+    flex: 1;
+    overflow: auto;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background-color: #0b0f19;
+}
+
+/* Printable Board Outer Container */
+.printable-board-container {
+    background-color: white;
+    color: black;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: width 0.3s, height 0.3s;
+}
+
+/* Electrical Panel Visual styling */
+.panel-board {
+    background: #f1f5f9;
+    border: 8px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 25px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    overflow: hidden;
+}
+
+.din-rail-row {
+    background: #e2e8f0;
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    align-items: stretch;
+    position: relative;
+    min-height: 165px;
+    border-bottom: 4px solid #94a3b8;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    gap: 2px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+/* Very subtle hover highlight for the rail row */
+.din-rail-row:hover {
+    background-color: #e9eff7;
+    border-bottom-color: #788fa5;
+}
+
+/* The physical metallic rail behind modules */
+.din-rail-row::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    right: 10px;
+    height: 35px;
+    background: linear-gradient(180deg, #94a3b8 0%, #cbd5e1 50%, #64748b 100%);
+    transform: translateY(-50%);
+    z-index: 1;
+    border-radius: 2px;
+    border-top: 1px solid #475569;
+    border-bottom: 1px solid #475569;
+}
+
+/* Modular Devices with dynamic scaling */
+.module-device {
+    background: white;
+    border: 2px solid #94a3b8;
+    border-top: 4px solid #64748b;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8px 4px;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    text-align: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.module-device.selected {
+    outline: 3px solid var(--accent) !important;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.7) !important;
+    transform: translateY(-2px);
+    z-index: 10;
+}
+
+/* Subtle border highlight on hovering over a module */
+.module-device:hover {
+    border-color: var(--accent) !important;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+}
+
+/* Differential switches are wider and styled slightly differently */
+.module-diff {
+    flex: 2.2 1 0px;
+    max-width: 95px;
+    min-width: 60px;
+    background: #f8fafc;
+    border-top: 4px solid #ef4444;
+}
+
+/* Standard Breaker is 1 module wide and shrinks/grows nicely */
+.module-breaker {
+    flex: 1 1 0px;
+    max-width: 60px;
+    min-width: 35px;
+    background: white;
+}
+
+/* Specific scale increase for connected/smart modules containing local IPs */
+.module-breaker.has-ip {
+    flex: 1.8 1 0px;
+    max-width: 85px;
+    min-width: 65px;
+}
+
+/* Custom Module Width Sizing Classes */
+.module-device.w-1 {
+    flex: 1 1 0px;
+    max-width: 60px;
+    min-width: 35px;
+}
+
+.module-device.w-2 {
+    flex: 2.2 1 0px;
+    max-width: 95px;
+    min-width: 60px;
+}
+
+.module-device.w-3 {
+    flex: 3.3 1 0px;
+    max-width: 135px;
+    min-width: 90px;
+}
+
+.module-device.w-4 {
+    flex: 4.4 1 0px;
+    max-width: 175px;
+    min-width: 120px;
+}
+
+/* Light Color Tint Classes (for Diffs and Breakers) - Increased Saturation */
+.module-device.tint-blue { background-color: #dbeafe; border-color: #3b82f6; }
+.module-device.tint-green { background-color: #dcfce7; border-color: #22c55e; }
+.module-device.tint-yellow { background-color: #fef9c3; border-color: #eab308; }
+.module-device.tint-red { background-color: #fee2e2; border-color: #ef4444; }
+.module-device.tint-purple { background-color: #f3e8ff; border-color: #a855f7; }
+.module-device.tint-orange { background-color: #ffedd5; border-color: #f97316; }
+
+/* Unused (Réserve) and Wired (Câblé) styles */
+.module-device.status-unused {
+    opacity: 0.65;
+    background: repeating-linear-gradient(
+        45deg,
+        #f1f5f9,
+        #f1f5f9 10px,
+        #cbd5e1 10px,
+        #cbd5e1 20px
+    ) !important;
+    border: 2px dashed #94a3b8 !important;
+}
+
+.module-device.status-unused .device-brand {
+    color: #94a3b8;
+}
+
+
+
+/* If unused AND under tension (status-wired), make the oblique stripes yellow */
+.module-device.status-unused.status-wired {
+    background: repeating-linear-gradient(
+        45deg,
+        #fef9c3,
+        #fef9c3 10px,
+        #fde047 10px,
+        #fde047 20px
+    ) !important;
+    border: 2px dashed #eab308 !important;
+}
+
+.device-brand {
+    font-size: 7px;
+    font-weight: 800;
+    color: #475569;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.device-spec {
+    font-size: 8px;
+    font-weight: bold;
+    color: #0f172a;
+    line-height: 1;
+    margin: 2px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.device-type-icon {
+    height: 18px;
+    margin: 2px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.device-type-icon svg {
+    width: 14px;
+    height: 14px;
+    fill: #475569;
+}
+
+.device-type-icon img {
+    max-height: 18px;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.device-type-icon span.emoji-icon {
+    font-size: 13px;
+    line-height: 1;
+}
+
+/* Toggle Switch Representation */
+.device-toggle {
+    width: 10px;
+    height: 20px;
+    background: #e2e8f0;
+    border: 1px solid #cbd5e1;
+    margin: 2px auto;
+    border-radius: 2px;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.device-toggle-handle {
+    width: 8px;
+    height: 10px;
+    background: #ef4444;
+    border-radius: 1px;
+    position: absolute;
+    left: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.device-toggle.on .device-toggle-handle {
+    top: 0;
+    background: #ef4444;
+}
+.device-toggle.off .device-toggle-handle {
+    bottom: 0;
+    background: #22c55e;
+}
+
+/* Connected module indicator badge centered above the label area dashed line (resized x2) */
+.device-connected-badge {
+    position: absolute;
+    top: -21px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
+}
+
+.device-connected-badge svg {
+    width: 18px;
+    height: 18px;
+    fill: #3b82f6;
+}
+
+/* Tension (Lightning bolt) badge */
+.device-tension-badge {
+    position: absolute;
+    top: 3px;
+    left: 4px;
+    font-size: 8px;
+    font-weight: bold;
+    z-index: 5;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.device-tension-badge.powered {
+    color: #eab308; /* vibrant yellow */
+    text-shadow: 0 0 2px rgba(234, 179, 8, 0.6);
+}
+
+.device-tension-badge.outline {
+    color: #94a3b8; /* gray */
+    opacity: 0.3;
+}
+
+/* Hide other controls on unused (reserve) modules and center the lightning bolt */
+.module-device.status-unused .device-type-icon,
+.module-device.status-unused .device-toggle,
+.module-device.status-unused .device-spec,
+.module-device.status-unused .device-test-btn,
+.module-device.status-unused .device-contactor-selector,
+.module-device.status-unused .device-telerupteur-switch,
+.module-device.status-unused .device-telerupteur-indicator,
+.module-device.status-unused .device-socket-outlet,
+.module-device.status-unused .device-wattmeter-screen,
+.module-device.status-unused .device-wattmeter-buttons {
+    display: none !important;
+}
+
+.module-device.status-unused .device-tension-badge {
+    left: 50% !important;
+    top: 45% !important;
+    transform: translate(-50%, -50%) !important;
+    font-size: 24px !important;
+}
+
+.module-device.status-unused .device-brand {
+    position: relative;
+    z-index: 12 !important;
+    color: #475569 !important;
+}
+
+
+
+/* Visual representation of Contactor (Auto/0/1 selector) */
+.device-contactor-selector {
+    width: 12px;
+    height: 24px;
+    background: #cbd5e1;
+    border: 1px solid #94a3b8;
+    margin: 4px auto;
+    border-radius: 2px;
+    position: relative;
+    font-size: 5px;
+    font-weight: 800;
+    color: #475569;
+}
+
+.device-contactor-selector::before {
+    content: '1\A 0\A A';
+    white-space: pre;
+    position: absolute;
+    left: 1px;
+    top: 2px;
+    line-height: 7px;
+    text-align: left;
+}
+
+.device-contactor-knob {
+    width: 6px;
+    height: 6px;
+    background: #ef4444;
+    border-radius: 1px;
+    position: absolute;
+    right: 1px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.device-contactor-knob.pos-1 { top: 2px; }
+.device-contactor-knob.pos-0 { top: 9px; }
+.device-contactor-knob.pos-auto { top: 16px; }
+
+/* Visual representation of Latching Relay (Télérupteur Override Switch) */
+.device-telerupteur-switch {
+    width: 10px;
+    height: 10px;
+    background: #f97316;
+    border: 1px solid #ea580c;
+    border-radius: 1px;
+    margin: 8px auto;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.device-telerupteur-indicator {
+    font-size: 6px;
+    font-weight: bold;
+    color: #475569;
+    margin-top: 1px;
+}
+
+/* Visual representation of Socket outlet (Prise modulaire French type) */
+.device-socket-outlet {
+    width: 22px;
+    height: 22px;
+    background: #cbd5e1;
+    border-radius: 50%;
+    margin: 6px auto;
+    position: relative;
+    border: 1px solid #94a3b8;
+}
+
+.device-socket-outlet::before {
+    content: '';
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: #94a3b8;
+    border-radius: 50%;
+    top: 5px;
+    left: 9px;
+}
+.device-socket-outlet::after {
+    content: '';
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: #0f172a;
+    border-radius: 50%;
+    top: 12px;
+    left: 5px;
+    box-shadow: 8px 0 #0f172a;
+}
+
+/* Visual representation of Wattmeter Screen & Controls */
+.device-wattmeter-screen {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 2px;
+    padding: 2px 1px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 700;
+    color: #38bdf8;
+    margin: 6px auto;
+    width: 90%;
+    text-align: center;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+}
+
+.device-wattmeter-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+    margin-bottom: 4px;
+}
+
+.device-wattmeter-btn {
+    width: 6px;
+    height: 6px;
+    background: #64748b;
+    border-radius: 50%;
+    border: 1px solid #475569;
+}
+
+/* Differential Test Button */
+.device-test-btn {
+    width: 12px;
+    height: 12px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    font-size: 7px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2px auto;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Circuit Label Block at the bottom of each breaker */
+.device-label-area {
+    margin-top: auto;
+    background: #f8fafc;
+    border-top: 1px dashed #cbd5e1;
+    padding-top: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    position: relative;
+}
+
+.device-rating {
+    font-size: 8px;
+    font-weight: 800;
+    background: #0f172a;
+    color: white;
+    padding: 1px 3px;
+    border-radius: 2px;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.device-description {
+    font-size: 7px;
+    line-height: 1.1;
+    margin-top: 2px;
+    word-break: break-word;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    color: #334155;
+    padding: 0 1px;
+    max-height: 24px;
+    width: 100%;
+}
+
+.device-ip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 6.5px;
+    font-weight: bold;
+    color: #2563eb;
+    margin-top: 2.5px;
+    white-space: nowrap;
+    overflow: visible;
+    text-align: center;
+    width: 100%;
+}
+
+/* Empty Spaces on rail */
+.rail-filler {
+    flex-grow: 18;
+    background: repeating-linear-gradient(
+        90deg,
+        #e2e8f0,
+        #e2e8f0 10px,
+        #cbd5e1 10px,
+        #cbd5e1 20px
+    );
+    z-index: 2;
+    border-radius: 4px;
+    border: 1px dashed #cbd5e1;
+}
+
+/* Extinguisher-like monthly testing grid block styling - Date & Visa */
+#test-grid-container {
+    background: white;
+    color: black;
+    border-top: 2px solid black;
+    padding: 10px 15px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.test-grid-header-label {
+    font-size: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #475569;
+    margin-bottom: 5px;
+}
+
+.test-grid-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 7.5px;
+    text-align: left;
+}
+
+.test-grid-table th, .test-grid-table td {
+    border: 1px solid black;
+    padding: 5px 8px;
+    height: 22px;
+}
+
+.test-grid-table th {
+    background-color: #f1f5f9;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 7px;
+}
+
+/* Dragging visual indicators */
+.module-device.dragging {
+    opacity: 0.25;
+    border: 2px dashed var(--accent);
+}
+
+.din-rail-row.drag-over {
+    background-color: #cbd5e1;
+    outline: 2px dashed var(--accent);
+}
+
+/* Cartouche (Technical Title Block) at the bottom */
+.cartouche {
+    border-top: 2px solid black;
+    padding: 15px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 15px;
+    background: white;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: black;
+}
+
+.cartouche-sec {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.cartouche-sec .label {
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #475569;
+    font-size: 8px;
+    margin-bottom: 2px;
+}
+
+.cartouche-sec .val {
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Active selection highlights */
+.module-device.selected {
+    outline: 2px solid var(--accent);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+/* Print Specific Rules - Aggressive Ink Saving */
+@media print {
+    body {
+        background-color: white !important;
+        color: black !important;
+        overflow: visible;
+        height: auto;
+    }
+    
+    .sidebar {
+        display: none !important;
+    }
+    
+    .preview-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        background-color: white !important;
+        display: block !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    
+    .printable-board-container {
+        box-shadow: none !important;
+        border: none !important;
+        page-break-inside: avoid;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    
+    /* Panel outline overrides */
+    .panel-board {
+        background: white !important;
+        border: 2px solid black !important;
+        border-radius: 6px !important;
+        padding: 15px !important;
+    }
+    
+    /* DIN rails thin lines instead of colored metallic plates */
+    .din-rail-row {
+        background: white !important;
+        border-bottom: 1px solid black !important;
+        box-shadow: none !important;
+    }
+    .din-rail-row::before {
+        background: none !important;
+        border-top: 1px dashed #94a3b8 !important;
+        border-bottom: none !important;
+        height: 1px !important;
+    }
+    
+    /* Module overrides: remove layout styles, draw thin outline borders but keep colors */
+    .module-device {
+        border: 1px solid black !important;
+        border-top: 3px solid black !important;
+        box-shadow: none !important;
+    }
+    
+    /* Preserve tint classes colors during print */
+    .module-device.tint-blue { background-color: #dbeafe !important; border-color: #3b82f6 !important; }
+    .module-device.tint-green { background-color: #dcfce7 !important; border-color: #22c55e !important; }
+    .module-device.tint-yellow { background-color: #fef9c3 !important; border-color: #eab308 !important; }
+    .module-device.tint-red { background-color: #fee2e2 !important; border-color: #ef4444 !important; }
+    .module-device.tint-purple { background-color: #f3e8ff !important; border-color: #a855f7 !important; }
+    .module-device.tint-orange { background-color: #ffedd5 !important; border-color: #f97316 !important; }
+    
+    /* Differential switches indicators */
+    .module-diff {
+        border-top: 3px solid black !important;
+    }
+    
+    /* Device toggle representation styling */
+    .device-toggle {
+        border: 1px solid black !important;
+        background: white !important;
+        box-shadow: none !important;
+    }
+    .device-toggle-handle {
+        background: black !important;
+    }
+    
+    /* Label and specifications overrides */
+    .device-label-area {
+        background: white !important;
+        border-top: 1px dashed black !important;
+    }
+    .device-rating {
+        background: white !important;
+        color: black !important;
+        border: 1px solid black !important;
+    }
+    
+    /* Hide empty spaces backgrounds */
+    .rail-filler {
+        background: none !important;
+        border: 1px dashed #cbd5e1 !important;
+    }
+    
+    /* Wattmeter display */
+    .device-wattmeter-screen {
+        background: white !important;
+        border: 1px solid black !important;
+        color: black !important;
+        box-shadow: none !important;
+    }
+
+    .module-device.status-unused {
+        background: repeating-linear-gradient(
+            45deg,
+            #f1f5f9,
+            #f1f5f9 10px,
+            #cbd5e1 10px,
+            #cbd5e1 20px
+        ) !important;
+        border: 2px dashed #94a3b8 !important;
+        opacity: 0.65 !important;
+    }
+    .module-device.status-unused.status-wired {
+        background: repeating-linear-gradient(
+            45deg,
+            #fef9c3,
+            #fef9c3 10px,
+            #fde047 10px,
+            #fde047 20px
+        ) !important;
+        border: 2px dashed #eab308 !important;
+    }
+
+    /* Context Menu Actions */
+.menu-item-action:hover {
+    background-color: var(--accent);
+    color: white !important;
+}
+    .module-device.selected, .module-device {
+        outline: none !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+
+    /* Print settings for tension badges */
+    .device-tension-badge {
+        color: black !important;
+        opacity: 1 !important;
+        text-shadow: none !important;
+    }
+    .device-tension-badge.outline {
+        display: none !important;
+    }
+}
+
+/* Modal Overlay & Styling */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    color: var(--text-main);
+}
+
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--text-main);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.templates-list {
+    list-style: none;
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: rgba(15, 23, 42, 0.4);
+}
+
+.templates-list li {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.templates-list li:last-child {
+    border-bottom: none;
+}
+
+.templates-list li .template-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 260px;
+}
+
+.templates-list li .template-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.templates-list li button {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+}
+
+/* Empty modular spaces on the DIN rail */
+.module-device.rail-space {
+    background: transparent !important;
+    border: 1px dashed rgba(0, 0, 0, 0.08) !important;
+    border-top: 1px dashed rgba(0, 0, 0, 0.08) !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    min-height: 140px;
+}
+
+.module-device.rail-space:hover {
+    border-color: var(--accent) !important;
+    background: rgba(59, 130, 246, 0.05) !important;
+}
+
+@media print {
+    .module-device.rail-space {
+        border: none !important;
+        background: transparent !important;
+    }
+}

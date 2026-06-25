@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schéma Tableau Électrique Imprimable</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Inline style block for runtime dynamic page dimension styles in print mode -->
+    <style id="dynamic-print-style"></style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Configuration Panel -->
+        <aside class="sidebar">
+            <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px;">
+                <div>
+                    <h1 style="margin-bottom: 0;">Tableau Électrique</h1>
+                    <p style="font-size: 0.75rem; color: var(--text-muted);">Schéma de tableau en direct</p>
+                </div>
+                <!-- Undo / Redo controls -->
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn-secondary" id="undo-btn" title="Annuler (Ctrl+Z)" style="padding: 6px 10px; font-size: 1rem;">↩</button>
+                    <button class="btn-secondary" id="redo-btn" title="Rétablir (Ctrl+Y)" style="padding: 6px 10px; font-size: 1rem;">↪</button>
+                </div>
+            </div>
+            
+            <div class="sidebar-content">
+                <!-- Page & Dimension Settings -->
+                <section class="form-group">
+                    <label>Format de Page (Dessin)</label>
+                    <select id="page-format">
+                        <option value="A4-landscape" selected>A4 Paysage (29.7 x 21 cm)</option>
+                        <option value="A4-portrait">A4 Portrait (21 x 29.7 cm)</option>
+                        <option value="custom">Format Personnalisé (cm)</option>
+                    </select>
+                </section>
+                
+                <section class="form-row form-group" id="custom-dimensions-row" style="display: none;">
+                    <div>
+                        <label>Largeur (cm)</label>
+                        <input type="number" id="custom-width" value="29.7" min="10" max="200" step="0.1">
+                    </div>
+                    <div>
+                        <label>Hauteur (cm)</label>
+                        <input type="number" id="custom-height" value="21.0" min="10" max="200" step="0.1">
+                    </div>
+                </section>
+
+                <section class="form-group">
+                    <label>Format de l'Imprimeur (Sortie PDF)</label>
+                    <select id="print-format">
+                        <option value="match" selected>Identique au format de page (Dessin)</option>
+                        <option value="A4-landscape">Forcer A4 Paysage (29.7 x 21 cm)</option>
+                        <option value="A4-portrait">Forcer A4 Portrait (21 x 29.7 cm)</option>
+                        <option value="A3-landscape">Forcer A3 Paysage (42 x 29.7 cm)</option>
+                        <option value="A3-portrait">Forcer A3 Portrait (29.7 x 42 cm)</option>
+                    </select>
+                </section>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
+
+                <!-- Clipboard controls -->
+                <section class="form-group" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px;">
+                    <h3 style="font-size: 0.85rem; margin-bottom: 8px; color: var(--accent);">Presse-papier</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-secondary" id="copy-btn" style="flex: 1; padding: 6px; font-size: 0.75rem;">📋 Copier</button>
+                        <button class="btn-secondary" id="cut-btn" style="flex: 1; padding: 6px; font-size: 0.75rem;">✂ Couper</button>
+                        <button class="btn-primary" id="paste-btn" style="flex: 1; padding: 6px; font-size: 0.75rem;">📥 Coller</button>
+                    </div>
+                    <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 5px; text-align: center;">Raccourcis clavier : Ctrl+C, Ctrl+X, Ctrl+V supportés</p>
+                </section>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
+
+                <!-- Cartouche Info -->
+                <section class="form-group">
+                    <h3 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--accent);">Cartouche Technique</h3>
+                    <div class="form-group">
+                        <label>Nom du projet / Titre</label>
+                        <input type="text" id="project-title" value="Tableau de Distribution Principal">
+                    </div>
+                    <div class="form-group">
+                        <label>Lieu / Adresse</label>
+                        <input type="text" id="project-address" value="Maison Individuelle - Rez-de-chaussée">
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label>Installateur</label>
+                            <input type="text" id="project-installer" value="Électricien Référent">
+                        </div>
+                        <div>
+                            <label>Date de pose</label>
+                            <input type="date" id="project-date">
+                        </div>
+                    </div>
+                </section>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
+
+                <!-- Color Legends Settings -->
+                <section class="form-group" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px;">
+                    <h3 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--accent);">Légende</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid #3b82f6; background-color: #dbeafe;"></span>
+                            <input type="text" id="legend-blue" placeholder="Légende pour Bleu..." style="padding: 6px; font-size: 0.8rem;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid #22c55e; background-color: #dcfce7;"></span>
+                            <input type="text" id="legend-green" placeholder="Légende pour Vert..." style="padding: 6px; font-size: 0.8rem;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid #eab308; background-color: #fef9c3;"></span>
+                            <input type="text" id="legend-yellow" placeholder="Légende pour Jaune..." style="padding: 6px; font-size: 0.8rem;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid #ef4444; background-color: #fee2e2;"></span>
+                            <input type="text" id="legend-red" placeholder="Légende pour Rouge..." style="padding: 6px; font-size: 0.8rem;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid #a855f7; background-color: #f3e8ff;"></span>
+                            <input type="text" id="legend-purple" placeholder="Légende pour Violet..." style="padding: 6px; font-size: 0.8rem;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid #f97316; background-color: #ffedd5;"></span>
+                            <input type="text" id="legend-orange" placeholder="Légende pour Orange..." style="padding: 6px; font-size: 0.8rem;">
+                        </div>
+                        <!-- Dynamic sub-inputs for custom hues will render here -->
+                        <div id="dynamic-custom-legends-container" style="display: flex; flex-direction: column; gap: 8px; padding-left: 20px; border-left: 2px solid var(--border-color); margin-top: 5px;"></div>
+                    </div>
+                </section>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
+
+                <!-- Monthly Test Grid Config -->
+                <section class="form-group" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px;">
+                    <h3 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--accent);">Suivi de Test des Différentiels</h3>
+                    <label style="display: flex; align-items: center; gap: 6px; font-weight: normal; cursor: pointer; margin-bottom: 8px;">
+                        <input type="checkbox" id="show-test-grid-checkbox" style="width: auto;" checked>
+                        <span>Afficher le carnet de test (crayon)</span>
+                    </label>
+                    <div id="test-grid-years-block">
+                        <label>Nombre de lignes d'inspection</label>
+                        <select id="test-grid-rows-select">
+                            <option value="4">4 cases</option>
+                            <option value="8" selected>8 cases</option>
+                            <option value="12">12 cases</option>
+                            <option value="16">16 cases</option>
+                        </select>
+                    </div>
+                </section>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
+
+                <!-- Save/Load/Export panel -->
+                <section class="form-group" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px;">
+                    <h3 style="font-size: 0.85rem; margin-bottom: 8px; color: var(--accent);">Fichiers & Sauvegardes</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-primary" id="export-btn" style="flex: 1; padding: 8px; font-size: 0.75rem;">Exporter (.te)</button>
+                            <button class="btn-primary" id="import-btn-trigger" style="flex: 1; padding: 8px; font-size: 0.75rem;">Importer (.te)</button>
+                            <input type="file" id="import-file-input" accept=".te" style="display: none;">
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-secondary" id="save-local-btn" style="flex: 1; padding: 8px; font-size: 0.75rem;">Sauver Nav.</button>
+                            <button class="btn-secondary" id="load-local-btn" style="flex: 1; padding: 8px; font-size: 0.75rem;">Charger Nav.</button>
+                        </div>
+                    </div>
+                </section>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
+
+                <!-- Panel Layout Settings -->
+                <section class="form-group">
+                    <h3 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--accent); display: flex; justify-content: space-between; align-items: center;">
+                        Rangées du Tableau
+                        <button class="btn-primary" id="add-row-btn" style="padding: 4px 8px; font-size: 0.75rem;">+ Rangée</button>
+                    </h3>
+                    <div class="form-group">
+                        <label>Capacité par rangée (modules)</label>
+                        <select id="row-modules-capacity">
+                            <option value="13" selected>13 modules (Standard)</option>
+                            <option value="18">18 modules (Grand tableau)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Dynamic row configurations will be loaded here -->
+                    <div id="rows-configuration-list"></div>
+                </section>
+
+                <!-- Actions -->
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn-primary" id="print-btn" style="flex: 1;">Imprimer (PDF)</button>
+                    <button class="btn-secondary" id="reset-btn">Réinitialiser</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Live Visual Preview -->
+        <main class="preview-container">
+            <div class="printable-board-container" id="printable-board">
+                <!-- Visual Panel Representation -->
+                <div class="panel-board" id="panel-board-preview">
+                    <!-- Din rail rows render here -->
+                </div>
+
+                <!-- Color legends preview container -->
+                <div id="color-legends-preview-container" style="display: none; padding: 10px 15px; border-top: 2px solid black; font-family: 'JetBrains Mono', monospace; font-size: 8px;">
+                    <div style="font-weight: bold; text-transform: uppercase; color: #475569; margin-bottom: 5px;">Légende</div>
+                    <div id="color-legends-preview-list" style="display: flex; flex-wrap: wrap; gap: 12px;"></div>
+                </div>
+
+                <!-- Extinguisher-like monthly testing grid block -->
+                <div id="test-grid-container">
+                    <!-- Dynamic monthly test grid will render here -->
+                </div>
+
+                <!-- Visual Technical Cartouche at bottom -->
+                <div class="cartouche">
+                    <div class="cartouche-sec">
+                        <span class="label">Désignation de l'installation</span>
+                        <span class="val" id="cartouche-title">Tableau de Distribution Principal</span>
+                    </div>
+                    <div class="cartouche-sec">
+                        <span class="label">Localisation</span>
+                        <span class="val" id="cartouche-address">Maison Individuelle - Rez-de-chaussée</span>
+                    </div>
+                    <div class="cartouche-sec" style="border-left: 1px solid black; padding-left: 10px;">
+                        <div>
+                            <span class="label">Installateur :</span> <strong id="cartouche-installer">Électricien</strong>
+                        </div>
+                        <div style="margin-top: 4px;">
+                            <span class="label">Date :</span> <strong id="cartouche-date">25/06/2026</strong>
+                        </div>
+                        <div style="margin-top: 4px;">
+                            <span class="label">Format :</span> <strong id="cartouche-format">A4 Paysage</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Right Sidebar (Inspector Panel) -->
+        <aside class="sidebar sidebar-right" id="inspector-sidebar">
+            <div class="sidebar-header">
+                <h2>Propriétés</h2>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">Configurez le module sélectionné</p>
+            </div>
+            <div class="sidebar-content" id="inspector-content">
+                <div class="empty-inspector-state" style="text-align: center; color: var(--text-muted); margin-top: 50px; font-size: 0.85rem; padding: 20px; border: 1px dashed var(--border-color); border-radius: 8px;">
+                    <p>Sélectionnez un élément sur le tableau ou dans la liste pour afficher ses propriétés.</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Custom Context Menu -->
+    <div id="custom-context-menu" class="context-menu" style="display: none; position: absolute; z-index: 2000;">
+        <ul style="list-style: none; padding: 5px 0; margin: 0; background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); width: 180px;">
+            <li class="menu-item-action" id="ctx-copy" style="padding: 8px 12px; font-size: 0.8rem; cursor: pointer; color: var(--text-main); display: flex; align-items: center; gap: 8px;">📋 Copier</li>
+            <li class="menu-item-action" id="ctx-cut" style="padding: 8px 12px; font-size: 0.8rem; cursor: pointer; color: var(--text-main); display: flex; align-items: center; gap: 8px;">✂ Couper</li>
+            <li class="menu-item-action" id="ctx-delete" style="padding: 8px 12px; font-size: 0.8rem; cursor: pointer; color: #ef4444; display: flex; align-items: center; gap: 8px;">🗑 Supprimer</li>
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
+            <li class="menu-item-action" id="ctx-toggle-on" style="padding: 8px 12px; font-size: 0.8rem; cursor: pointer; color: var(--text-main); display: flex; align-items: center; gap: 8px;">⚡ Câblé / Sous tension</li>
+            <li class="menu-item-action" id="ctx-toggle-unused" style="padding: 8px 12px; font-size: 0.8rem; cursor: pointer; color: var(--text-main); display: flex; align-items: center; gap: 8px;">⚙ Mode Réserve (Non utilisé)</li>
+        </ul>
+    </div>
+
+    <!-- LocalStorage Templates Manager Modal -->
+    <div id="local-templates-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Sauvegardes du Navigateur</h2>
+                <button class="modal-close" id="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Enregistrer le tableau en cours</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="new-template-name" placeholder="Nom du modèle...">
+                        <button class="btn-primary" id="modal-save-btn">Enregistrer</button>
+                    </div>
+                </div>
+                <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 5px;">Modèles existants</label>
+                <ul class="templates-list" id="modal-templates-list">
+                    <!-- Templates list items with Load / Delete buttons -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
