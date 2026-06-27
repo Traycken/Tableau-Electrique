@@ -8,15 +8,18 @@ Conceau en HTML5, CSS3 vanille, et JavaScript moderne, ce projet permet de gén�
 
 ## 🚀 Fonctionnalités Clés
 
-- **Ajustement libre et Modules Vides** : Positionnez vos disjoncteurs et différentiels n'importe où sur le rail DIN. Les espaces vides se comportent comme des modules invisibles que vous pouvez insérer, glisser-déposer, redimensionner ou modifier à la volée.
-- **Inspecteur Latéral Droit (Master-Detail)** : Sélectionnez un ou plusieurs modules pour modifier instantanément leurs propriétés (Calibre, Description, Largeur, Couleur personnalisée avec curseur de teinte, statut de raccordement réseau et IP, Mode Réserve, Câblé/Sous tension).
+- **Ajustement libre et Modules Vides** : Positionnez vos disjoncteurs et différentiels n'importe où sur le rail DIN. Les espaces vides se comportent comme des modules individuels strictement **verrouillés à 1 module de large** (pour éviter les décalages de grille) que vous pouvez insérer, glisser-déposer, ou supprimer à la volée.
+- **Inspecteur Latéral Droit (Master-Detail)** : Sélectionnez un ou plusieurs modules pour modifier instantanément leurs propriétés (Marque / En-tête personnalisé, Description sur plusieurs lignes, Calibre, Largeur, Couleur personnalisée, Icône personnalisée (Emoji, fichier local ou **URL externe**), Mode Réserve, et Câblé/Sous tension).
+- **Visibilité intelligente de la tension** : L'option « Câblé / Branché (Sous tension) » s'affiche uniquement si le « Mode Réserve (Non utilisé) » est activé (sinon elle est masquée et forcée à actif par défaut).
+- **Descriptions Multi-lignes & Auto-Sizing** : Écrivez des descriptions sur plusieurs lignes (touche `Entrée`). Chaque ligne est interprétée indépendamment et sa police est automatiquement ajustée en taille (de 7px à 4px) pour s'intégrer parfaitement au module sans jamais déborder ni se couper.
+- **Gestion des Commentaires & UIDs** : Saisissez des commentaires associés aux modules. Un identifiant unique (**UID**) au format `R[Rangée]-[Lettre][Index]` (ex: `R2-D3`) est généré, affiché en couleur sur le module (`*R2-D3`), et listé dans une section de synthèse « Commentaires » avec un rappel de la structure.
 - **Glisser-Déposer Intuitif (Drag & Drop)** : Ordonnez vos modules directement sur le rail électrique ou réorganisez l'arborescence depuis la liste de gauche.
 - **Impression Professionnelle & Export PDF** :
   - Choix du format de dessin (A4 Paysage/Portrait, sur-mesure) indépendant du format papier de sortie de l'imprimante (A4, A3).
   - Centrage automatique du dessin avec **lignes de découpe (pointillés)** et indicateurs ciseaux (`✂`) si le format de dessin est plus petit que la page physique.
   - Masquage automatique des barres latérales et des éléments interactifs en mode impression.
 - **Grille de Contrôle Mensuel** : Tableau dynamique pour documenter les dates d'activation et de test périodique des disjoncteurs différentiels (bouton Test `T`).
-- **Légende Adaptative** : Affiche automatiquement la signification des codes couleur utilisés, de la "Réserve (Non utilisé)" (hachuré), ainsi que de l'indicateur "⚡ Sous Tension" (seulement si des modules correspondants existent).
+- **Légende Adaptative** : Affiche automatiquement la signification des codes couleur utilisés, de la "Réserve (Non utilisé)" (hachuré), de l'indicateur "⚡ Sous Tension", ainsi que la liste récapitulative des commentaires liés par UID.
 - **Gestion de Projet** : Exportez/Importez vos configurations sous forme de fichiers `.te` légers ou enregistrez-les directement dans vos modèles locaux (localStorage).
 - **Gestion Undo/Redo & Raccourcis Clavier** : Historique complet pour annuler ou rétablir des actions.
 
