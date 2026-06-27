@@ -1,7 +1,5 @@
 # ⚡ Tableau Électrique - Configurateur Interactif
 
-https://traycken.github.io/Tableau-Electrique/
-
 Un configurateur web moderne, réactif et épuré pour concevoir, documenter et imprimer des schémas d'implantation de tableaux de distribution électrique (format DIN). 
 
 Conceau en HTML5, CSS3 vanille, et JavaScript moderne, ce projet permet de générer des plans d'implantation propres, exportables et prêts pour l'impression ou la sauvegarde en PDF au format A4/A3.
@@ -67,6 +65,6 @@ Aucun serveur ou build n'est nécessaire. Double-cliquez simplement sur le fichi
 ## 🖨️ Conseils pour l'impression PDF
 
 Pour obtenir un rendu parfait lors de l'exportation en PDF (via la fonction Imprimer de votre navigateur `Ctrl + P`) :
-1. Choisissez la **Mise en page** (Paysage ou Portrait) correspondant à votre **Format de l'Imprimeur** configuré dans la barre latérale.
+1. Choose la **Mise en page** (Paysage ou Portrait) correspondant à votre **Format de l'Imprimeur** configuré dans la barre latérale.
 2. Activez l'option **Graphismes d'arrière-plan** dans les paramètres avancés de l'impression pour conserver les couleurs des disjoncteurs et le motif des modules de réserve.
 3. Désactivez les **En-têtes et pieds de page** fournis par le navigateur pour masquer les URL et dates système parasites.

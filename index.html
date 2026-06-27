@@ -156,6 +156,7 @@
                 <section class="form-group" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px;">
                     <h3 style="font-size: 0.85rem; margin-bottom: 8px; color: var(--accent);">Fichiers & Sauvegardes</h3>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <button class="btn-danger" id="new-board-btn" style="width: 100%; padding: 8px; font-size: 0.75rem; margin-bottom: 2px;">🆕 Nouveau Tableau</button>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn-primary" id="export-btn" style="flex: 1; padding: 8px; font-size: 0.75rem;">Exporter (.te)</button>
                             <button class="btn-primary" id="import-btn-trigger" style="flex: 1; padding: 8px; font-size: 0.75rem;">Importer (.te)</button>
@@ -189,9 +190,15 @@
                 </section>
 
                 <!-- Actions -->
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn-primary" id="print-btn" style="flex: 1;">Imprimer (PDF)</button>
-                    <button class="btn-secondary" id="reset-btn">Réinitialiser</button>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 20px;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn-primary" id="print-btn" style="flex: 1;">🖨️ Imprimer (PDF)</button>
+                        <button class="btn-secondary" id="print-tips-btn" title="Conseils pour l'impression PDF" style="padding: 10px 12px; font-size: 1rem; cursor: pointer;">💡</button>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-secondary" id="reset-spaces-btn" style="flex: 1; font-size: 0.8rem; padding: 8px;">Réaligner Espaces</button>
+                        <button class="btn-secondary" id="reset-btn" style="flex: 1; font-size: 0.8rem; padding: 8px;">Réinitialiser (Démo)</button>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -208,6 +215,15 @@
                 <div id="color-legends-preview-container" style="display: none; padding: 10px 15px; border-top: 2px solid black; font-family: 'JetBrains Mono', monospace; font-size: 8px;">
                     <div style="font-weight: bold; text-transform: uppercase; color: #475569; margin-bottom: 5px;">Légende</div>
                     <div id="color-legends-preview-list" style="display: flex; flex-wrap: wrap; gap: 12px;"></div>
+                </div>
+
+                <!-- Comments preview container -->
+                <div id="comments-preview-container" style="display: none; padding: 10px 15px; border-top: 2px solid black; font-family: 'JetBrains Mono', monospace; font-size: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <div style="font-weight: bold; text-transform: uppercase; color: #475569;">Commentaires</div>
+                        <div style="font-size: 6px; color: #64748b; font-style: italic;">* Structure UID : R[Rangée]-[Lettre][Index dans la rangée]</div>
+                    </div>
+                    <div id="comments-preview-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
                 </div>
 
                 <!-- Extinguisher-like monthly testing grid block -->
@@ -258,6 +274,7 @@
     <div id="custom-context-menu" class="context-menu" style="display: none; position: absolute; z-index: 2000;">
         <ul style="list-style: none; padding: 5px 0; margin: 0; background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); width: 180px;">
             <li class="menu-item-action" id="ctx-copy" style="padding: 8px 12px; font-size: 0.8rem; cursor: pointer; color: var(--text-main); display: flex; align-items: center; gap: 8px;">📋 Copier</li>
+            <li class="menu-item-action" id="ctx-duplicate" style="padding: 8px 12px; font-size: 0.8rem; cursor: pointer; color: var(--text-main); display: flex; align-items: center; gap: 8px;">➕ Dupliquer</li>
             <li class="menu-item-action" id="ctx-cut" style="padding: 8px 12px; font-size: 0.8rem; cursor: pointer; color: var(--text-main); display: flex; align-items: center; gap: 8px;">✂ Couper</li>
             <li class="menu-item-action" id="ctx-delete" style="padding: 8px 12px; font-size: 0.8rem; cursor: pointer; color: #ef4444; display: flex; align-items: center; gap: 8px;">🗑 Supprimer</li>
             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 4px 0;">
@@ -285,6 +302,23 @@
                 <ul class="templates-list" id="modal-templates-list">
                     <!-- Templates list items with Load / Delete buttons -->
                 </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Tips Modal -->
+    <div id="print-tips-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>🖨️ Conseils pour l'impression PDF</h2>
+                <button class="modal-close" id="print-tips-close-btn">&times;</button>
+            </div>
+            <div class="modal-body" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-main);">
+                <ol style="padding-left: 20px; margin-bottom: 0; display: flex; flex-direction: column; gap: 10px;">
+                    <li><strong>Mise en page :</strong> Choisissez l'orientation (Paysage ou Portrait) correspondant à votre <em>Format de l'Imprimeur</em> configuré dans la barre latérale.</li>
+                    <li><strong>Graphismes d'arrière-plan :</strong> Activez cette option dans les paramètres d'impression avancés de votre navigateur pour afficher les couleurs des disjoncteurs et le motif des réserves.</li>
+                    <li><strong>En-têtes et pieds de page :</strong> Désactivez cette option pour masquer les URL, titres de pages et dates système parasites.</li>
+                </ol>
             </div>
         </div>
     </div>

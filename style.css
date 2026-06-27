@@ -297,7 +297,7 @@ button {
 /* Main Preview Area */
 .preview-container {
     flex: 1;
-    overflow: auto;
+    overflow: hidden;
     padding: 40px;
     display: flex;
     justify-content: center;
@@ -315,7 +315,10 @@ button {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    transition: width 0.3s, height 0.3s;
+    transition: width 0.3s, height 0.3s, transform 0.3s;
+    transform: scale(var(--board-scale, 1));
+    transform-origin: top center;
+    flex-shrink: 0;
 }
 
 /* Electrical Panel Visual styling */
@@ -388,6 +391,11 @@ button {
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+
+    /* Dynamic flexbox sizing based on CSS custom properties set in JS */
+    flex: var(--module-width, 1) 1 0px;
+    max-width: calc((var(--module-width, 1) / var(--row-capacity, 13)) * 100%);
+    min-width: calc(var(--module-width, 1) * 25px);
 }
 
 .module-device.selected {
@@ -405,18 +413,12 @@ button {
 
 /* Differential switches are wider and styled slightly differently */
 .module-diff {
-    flex: 2.2 1 0px;
-    max-width: 95px;
-    min-width: 60px;
     background: #f8fafc;
     border-top: 4px solid #ef4444;
 }
 
 /* Standard Breaker is 1 module wide and shrinks/grows nicely */
 .module-breaker {
-    flex: 1 1 0px;
-    max-width: 60px;
-    min-width: 35px;
     background: white;
 }
 
@@ -425,31 +427,6 @@ button {
     flex: 1.8 1 0px;
     max-width: 85px;
     min-width: 65px;
-}
-
-/* Custom Module Width Sizing Classes */
-.module-device.w-1 {
-    flex: 1 1 0px;
-    max-width: 60px;
-    min-width: 35px;
-}
-
-.module-device.w-2 {
-    flex: 2.2 1 0px;
-    max-width: 95px;
-    min-width: 60px;
-}
-
-.module-device.w-3 {
-    flex: 3.3 1 0px;
-    max-width: 135px;
-    min-width: 90px;
-}
-
-.module-device.w-4 {
-    flex: 4.4 1 0px;
-    max-width: 175px;
-    min-width: 120px;
 }
 
 /* Light Color Tint Classes (for Diffs and Breakers) - Increased Saturation */
@@ -810,17 +787,27 @@ button {
 
 .device-description {
     font-size: 7px;
-    line-height: 1.1;
+    line-height: 1.15;
     margin-top: 2px;
-    word-break: break-word;
     overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     color: #334155;
     padding: 0 1px;
-    max-height: 24px;
+    max-height: 32px;
     width: 100%;
+}
+
+.description-line {
+    white-space: nowrap;
+    display: inline-block;
+    overflow: visible;
+    text-align: center;
+    max-width: 100%;
+    font-size: 7px;
+    line-height: 1.1;
 }
 
 .device-ip {

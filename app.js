@@ -156,11 +156,90 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAll();
     });
 
+    document.getElementById('new-board-btn').addEventListener('click', () => {
+        if (confirm('Créer un nouveau tableau vide ? Toutes vos modifications actuelles seront perdues.')) {
+            appState = {
+                pageFormat: 'A4-landscape',
+                printFormat: 'match',
+                customWidth: 29.7,
+                customHeight: 21.0,
+                projectTitle: '',
+                projectAddress: '',
+                projectInstaller: '',
+                projectDate: new Date().toISOString().split('T')[0],
+                rowCapacity: 13,
+                showTestGrid: true,
+                testGridRows: 8,
+                colorLegends: { none: "", blue: "", green: "", yellow: "", red: "", purple: "", orange: "", custom: "" },
+                rows: [
+                    { id: 1, breakers: [] }
+                ]
+            };
+            
+            // Clear inputs
+            document.getElementById('project-title').value = '';
+            document.getElementById('project-address').value = '';
+            document.getElementById('project-installer').value = '';
+            document.getElementById('project-date').value = appState.projectDate;
+            document.getElementById('page-format').value = 'A4-landscape';
+            document.getElementById('custom-dimensions-row').style.display = 'none';
+            document.getElementById('row-modules-capacity').value = 13;
+            
+            // Reset color legend inputs
+            ['blue', 'green', 'yellow', 'red', 'purple', 'orange'].forEach(color => {
+                const input = document.getElementById(`legend-${color}`);
+                if (input) input.value = '';
+            });
+
+            // Clear selection
+            window.selectedBreakers = [];
+            window.selectedBreakerId = null;
+            window.selectedRowId = null;
+
+            window.saveState();
+            updateDimensions();
+            renderAll();
+        }
+    });
+
+    document.getElementById('reset-spaces-btn').addEventListener('click', () => {
+        appState.rows.forEach(row => {
+            row.breakers = row.breakers.filter(b => !(b.isSpace || b.category === 'vide'));
+        });
+        window.saveState();
+        renderAll();
+    });
+
     document.getElementById('reset-btn').addEventListener('click', () => {
         if(confirm('Réinitialiser le tableau entier ?')) {
             location.reload();
         }
     });
+
+    const tipsBtn = document.getElementById('print-tips-btn');
+    const tipsModal = document.getElementById('print-tips-modal');
+    const tipsCloseBtn = document.getElementById('print-tips-close-btn');
+
+    if (tipsBtn && tipsModal) {
+        tipsBtn.addEventListener('click', () => {
+            tipsModal.style.display = 'flex';
+        });
+    }
+
+    if (tipsCloseBtn && tipsModal) {
+        tipsCloseBtn.addEventListener('click', () => {
+            tipsModal.style.display = 'none';
+        });
+    }
+
+    // Close tips modal when clicking outside content box
+    if (tipsModal) {
+        tipsModal.addEventListener('click', (e) => {
+            if (e.target === tipsModal) {
+                tipsModal.style.display = 'none';
+            }
+        });
+    }
 
     // Undo/Redo/Clipboard global state
     window.selectedBreakerId = null;
@@ -284,6 +363,44 @@ document.addEventListener('DOMContentLoaded', () => {
         window.clipboard = copied;
     };
 
+    window.duplicateBreaker = function() {
+        if (window.selectedBreakers.length === 0) return;
+        let targetRowId = window.selectedRowId;
+        let targetBreakerId = window.selectedBreakerId;
+        
+        if (!targetRowId) return;
+        const row = appState.rows.find(r => r.id === targetRowId);
+        if (!row) return;
+
+        const newBreakers = [];
+        window.selectedBreakers.forEach(sel => {
+            const rowOfSel = appState.rows.find(r => r.id === sel.rowId);
+            if (rowOfSel) {
+                const originalBreaker = rowOfSel.breakers.find(item => item.id === sel.breakerId);
+                if (originalBreaker && originalBreaker.category !== 'vide') {
+                    const clone = JSON.parse(JSON.stringify(originalBreaker));
+                    clone.id = Date.now() + Math.floor(Math.random() * 100000);
+                    
+                    const idx = rowOfSel.breakers.findIndex(b => b.id === originalBreaker.id);
+                    if (idx !== -1) {
+                        rowOfSel.breakers.splice(idx + 1, 0, clone);
+                        newBreakers.push({ rowId: sel.rowId, breakerId: clone.id });
+                    }
+                }
+            }
+        });
+
+        if (newBreakers.length > 0) {
+            window.saveState();
+            renderAll();
+            window.selectedBreakers = newBreakers;
+            const primary = newBreakers[newBreakers.length - 1];
+            window.selectedRowId = primary.rowId;
+            window.selectedBreakerId = primary.breakerId;
+            window.renderInspector();
+        }
+    };
+
     window.cutBreaker = function() {
         if (window.selectedBreakers.length === 0) return;
         window.copyBreaker();
@@ -377,13 +494,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const parsed = JSON.parse(evt.target.result);
                 if (parsed && Array.isArray(parsed.rows)) {
                     appState = parsed;
-                    // Fix missing fields if any
                     if (!appState.projectTitle) appState.projectTitle = "Tableau Importé";
-                    document.getElementById('project-title').value = appState.projectTitle;
-                    document.getElementById('project-address').value = appState.projectAddress || "";
-                    document.getElementById('project-installer').value = appState.projectInstaller || "";
-                    document.getElementById('project-date').value = appState.projectDate || new Date().toISOString().split('T')[0];
+                    restoreStateToUI();
                     window.saveState();
+                    updateDimensions();
                     renderAll();
                 } else {
                     alert("Fichier .te invalide");
@@ -440,11 +554,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else {
                     appState = templates[name];
-                    document.getElementById('project-title').value = appState.projectTitle || "";
-                    document.getElementById('project-address').value = appState.projectAddress || "";
-                    document.getElementById('project-installer').value = appState.projectInstaller || "";
-                    document.getElementById('project-date').value = appState.projectDate || new Date().toISOString().split('T')[0];
+                    restoreStateToUI();
                     window.saveState();
+                    updateDimensions();
                     renderAll();
                     window.closeTemplatesModal();
                 }
@@ -520,13 +632,19 @@ document.addEventListener('DOMContentLoaded', () => {
         window.hideContextMenu();
     });
 
-    // Close context menu on window resize
+    // Close context menu on window resize and recalculate board scale factors
     window.addEventListener('resize', () => {
         window.hideContextMenu();
+        updateDimensions();
+        setTimeout(adjustDescriptionFontSizes, 100);
     });
 
     document.getElementById('ctx-copy').addEventListener('click', () => {
         window.copyBreaker();
+    });
+
+    document.getElementById('ctx-duplicate').addEventListener('click', () => {
+        window.duplicateBreaker();
     });
 
     document.getElementById('ctx-cut').addEventListener('click', () => {
@@ -538,17 +656,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const isPart = window.selectedBreakers && window.selectedBreakers.some(sel => sel.breakerId === contextBreakerId);
             if (isPart) {
                 window.selectedBreakers.forEach(sel => {
-                    const row = appState.rows.find(r => r.id === sel.rowId);
-                    if (row) {
-                        row.breakers = row.breakers.filter(b => b.id !== sel.breakerId);
-                    }
+                    window.deleteBreaker(sel.rowId, sel.breakerId);
                 });
                 window.deselectBreaker();
             } else {
-                deleteBreaker(contextRowId, contextBreakerId);
+                window.deleteBreaker(contextRowId, contextBreakerId);
             }
-            window.saveState();
-            renderAll();
         }
     });
 
@@ -600,6 +713,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             const b = row.breakers.find(item => item.id === sel.breakerId);
                             if (b) {
                                 b.unused = targetUnused;
+                                if (!targetUnused) {
+                                    b.wired = true;
+                                    b.on = true;
+                                }
                             }
                         }
                     });
@@ -610,6 +727,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const breaker = row.breakers.find(b => b.id === contextBreakerId);
                     if (breaker) {
                         breaker.unused = !breaker.unused;
+                        if (!breaker.unused) {
+                            breaker.wired = true;
+                            breaker.on = true;
+                        }
                     }
                 }
             }
@@ -662,42 +783,16 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         try {
             appState = JSON.parse(savedState);
-            document.getElementById('project-title').value = appState.projectTitle || "";
-            document.getElementById('project-address').value = appState.projectAddress || "";
-            document.getElementById('project-installer').value = appState.projectInstaller || "";
-            document.getElementById('project-date').value = appState.projectDate || new Date().toISOString().split('T')[0];
-            
-            // Restore page format & custom dimensions values
-            if (appState.pageFormat) {
-                document.getElementById('page-format').value = appState.pageFormat;
-                const customRow = document.getElementById('custom-dimensions-row');
-                if (appState.pageFormat === 'custom') {
-                    customRow.style.display = 'grid';
-                } else {
-                    customRow.style.display = 'none';
-                }
-            }
-            if (appState.customWidth) {
-                document.getElementById('custom-width').value = appState.customWidth;
-            }
-            if (appState.customHeight) {
-                document.getElementById('custom-height').value = appState.customHeight;
-            }
-            if (appState.printFormat) {
-                document.getElementById('print-format').value = appState.printFormat;
-            }
         } catch(e) {}
     }
 
+    restoreStateToUI();
+
     // Bind Color Legend Inputs
     const colorsList = ['blue', 'green', 'yellow', 'red', 'purple', 'orange'];
-    if (!appState.colorLegends) {
-        appState.colorLegends = { none: "", blue: "", green: "", yellow: "", red: "", purple: "", orange: "", custom: "" };
-    }
     colorsList.forEach(color => {
         const input = document.getElementById(`legend-${color}`);
         if (input) {
-            input.value = appState.colorLegends[color] || "";
             input.addEventListener('input', (e) => {
                 appState.colorLegends[color] = e.target.value;
                 window.saveState();
@@ -713,6 +808,50 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDimensions();
     renderAll();
 });
+
+function restoreStateToUI() {
+    document.getElementById('project-title').value = appState.projectTitle || "";
+    document.getElementById('project-address').value = appState.projectAddress || "";
+    document.getElementById('project-installer').value = appState.projectInstaller || "";
+    document.getElementById('project-date').value = appState.projectDate || new Date().toISOString().split('T')[0];
+    
+    // Restore page format & custom dimensions values
+    if (appState.pageFormat) {
+        document.getElementById('page-format').value = appState.pageFormat;
+        const customRow = document.getElementById('custom-dimensions-row');
+        if (customRow) {
+            if (appState.pageFormat === 'custom') {
+                customRow.style.display = 'grid';
+            } else {
+                customRow.style.display = 'none';
+            }
+        }
+    }
+    if (appState.customWidth) {
+        document.getElementById('custom-width').value = appState.customWidth;
+    }
+    if (appState.customHeight) {
+        document.getElementById('custom-height').value = appState.customHeight;
+    }
+    if (appState.printFormat) {
+        document.getElementById('print-format').value = appState.printFormat;
+    }
+    if (appState.rowCapacity) {
+        document.getElementById('row-modules-capacity').value = appState.rowCapacity;
+    }
+
+    // Restore Color Legends
+    const colorsList = ['blue', 'green', 'yellow', 'red', 'purple', 'orange'];
+    if (!appState.colorLegends) {
+        appState.colorLegends = { none: "", blue: "", green: "", yellow: "", red: "", purple: "", orange: "", custom: "" };
+    }
+    colorsList.forEach(color => {
+        const input = document.getElementById(`legend-${color}`);
+        if (input) {
+            input.value = appState.colorLegends[color] || "";
+        }
+    });
+}
 
 function updateDimensions() {
     let width = 29.7;
@@ -736,6 +875,7 @@ function updateDimensions() {
     const board = document.getElementById('printable-board');
     board.style.width = `${width}cm`;
     board.style.height = `${height}cm`;
+    board.style.setProperty('--row-capacity', appState.rowCapacity || 13);
 
     document.getElementById('cartouche-format').innerText = label;
 
@@ -827,18 +967,197 @@ function updateDimensions() {
                 font-weight: bold;
                 z-index: 9999;
             }
+            .printable-board-container {
+                transform: none !important;
+            }
         }
     `;
+
+    // Dynamic viewport scaling using pure CSS custom properties
+    setTimeout(() => {
+        const board = document.getElementById('printable-board');
+        const container = document.querySelector('.preview-container');
+        if (board && container) {
+            const containerWidth = container.clientWidth - 80; // 40px padding * 2
+            const containerHeight = container.clientHeight - 80;
+
+            const pxPerCm = 37.795;
+            const targetWidthPx = width * pxPerCm;
+            const targetHeightPx = height * pxPerCm;
+
+            const scaleX = containerWidth / targetWidthPx;
+            const scaleY = containerHeight / targetHeightPx;
+            const scale = Math.min(scaleX, scaleY, 1.2); // Limit scale
+
+            board.style.setProperty('--board-scale', scale);
+        }
+    }, 50);
+}
+
+function getBreakerWidth(breaker) {
+    if (!breaker) return 1;
+    if (breaker.width !== undefined && breaker.width !== null) {
+        return parseInt(breaker.width) || 1;
+    }
+    if (breaker.category === 'differentiel' || breaker.category === 'wattmetre' || breaker.category === 'prise_modulaire') {
+        return 2;
+    }
+    return 1;
+}
+
+function formatDescriptionHtml(desc) {
+    if (!desc) return '&nbsp;';
+    return desc.split('\n').map(line => `<div class="description-line">${line || '&nbsp;'}</div>`).join('');
+}
+
+function adjustDescriptionFontSizes() {
+    const lines = document.querySelectorAll('.device-description .description-line');
+    lines.forEach(line => {
+        line.style.fontSize = '7px';
+        const parent = line.closest('.device-description');
+        if (!parent) return;
+        const maxW = parent.clientWidth - 2;
+        if (maxW <= 0) return;
+        let currentSize = 7;
+        while (line.scrollWidth > maxW && currentSize > 4) {
+            currentSize -= 0.5;
+            line.style.fontSize = currentSize + 'px';
+        }
+    });
+
+    const brands = document.querySelectorAll('.device-brand');
+    brands.forEach(brand => {
+        brand.style.fontSize = '7px';
+        const parent = brand.parentElement;
+        if (!parent) return;
+        const maxW = parent.clientWidth - 6; // Safety margin for module padding
+        if (maxW <= 0) return;
+        let currentSize = 7;
+        while (brand.scrollWidth > maxW && currentSize > 4) {
+            currentSize -= 0.5;
+            brand.style.fontSize = currentSize + 'px';
+        }
+    });
+}
+
+function getBreakerColor(breaker) {
+    if (!breaker) return '#475569';
+    if (breaker.color === 'custom') {
+        return `hsl(${breaker.customHue || 120}, 75%, 35%)`;
+    }
+    const colorMap = {
+        blue: '#2563eb',
+        green: '#16a34a',
+        yellow: '#ca8a04',
+        red: '#dc2626',
+        purple: '#7c3aed',
+        orange: '#ea580c'
+    };
+    return colorMap[breaker.color] || '#475569';
+}
+
+function getElementUID(row, breaker, rowIndex) {
+    const rowNum = rowIndex + 1;
+    const headerText = breaker.customBrand || getCategoryLabel(breaker.category) || '';
+    const firstLetter = headerText.trim().charAt(0).toUpperCase() || 'X';
+    
+    let matchCount = 0;
+    for (const b of row.breakers) {
+        const bHeader = b.customBrand || getCategoryLabel(b.category) || '';
+        const bLetter = bHeader.trim().charAt(0).toUpperCase() || 'X';
+        if (bLetter === firstLetter) {
+            matchCount++;
+            if (b.id === breaker.id) {
+                break;
+            }
+        }
+    }
+    return `R${rowNum}-${firstLetter}${matchCount}`;
+}
+
+function renderCommentsPreview() {
+    const container = document.getElementById('comments-preview-container');
+    const list = document.getElementById('comments-preview-list');
+    if (!container || !list) return;
+
+    const commentedBreakers = [];
+    appState.rows.forEach((row, rowIndex) => {
+        row.breakers.forEach(b => {
+            if (b.comment && b.comment.trim()) {
+                const uid = getElementUID(row, b, rowIndex);
+                commentedBreakers.push({
+                    uid: uid,
+                    comment: b.comment.trim(),
+                    breaker: b
+                });
+            }
+        });
+    });
+
+    if (commentedBreakers.length === 0) {
+        container.style.display = 'none';
+        list.innerHTML = '';
+        return;
+    }
+
+    container.style.display = 'block';
+    list.innerHTML = commentedBreakers.map(item => {
+        const color = getBreakerColor(item.breaker);
+        return `
+            <div style="display: flex; gap: 8px; line-height: 1.2;">
+                <strong style="color: ${color}; min-width: 45px; flex-shrink: 0;">*${item.uid} :</strong>
+                <span style="color: #334155;">${item.comment}</span>
+            </div>
+        `;
+    }).join('');
 }
 
 function normalizeRows() {
     if (!appState.rows) return;
     appState.rows.forEach(row => {
+        // Ensure all spaces are strictly 1 module wide and split any wider spaces
+        const splitBreakers = [];
+        row.breakers.forEach(b => {
+            if (b.isSpace || b.category === 'vide') {
+                const w = getBreakerWidth(b);
+                for (let i = 0; i < w; i++) {
+                    splitBreakers.push({
+                        id: Math.floor(Math.random() * 100000000),
+                        category: 'vide',
+                        width: 1,
+                        isSpace: true
+                    });
+                }
+            } else {
+                splitBreakers.push(b);
+            }
+        });
+        row.breakers = splitBreakers;
+
+        // 1. Calculate current width of the row
         let currentWidth = 0;
         row.breakers.forEach(b => {
-            currentWidth += b.width || 1;
+            currentWidth += getBreakerWidth(b);
         });
 
+        // 2. Adjust spaces to fit the capacity (remove spaces from right to left if overflow)
+        if (currentWidth > appState.rowCapacity) {
+            for (let i = row.breakers.length - 1; i >= 0; i--) {
+                if (row.breakers[i].isSpace || row.breakers[i].category === 'vide') {
+                    currentWidth -= getBreakerWidth(row.breakers[i]);
+                    row.breakers.splice(i, 1);
+                    if (currentWidth <= appState.rowCapacity) break;
+                }
+            }
+        }
+
+        // Recalculate current width after downsizing
+        currentWidth = 0;
+        row.breakers.forEach(b => {
+            currentWidth += getBreakerWidth(b);
+        });
+
+        // 3. Fill up to capacity with individual width-1 spaces if under capacity
         if (currentWidth < appState.rowCapacity) {
             const needed = appState.rowCapacity - currentWidth;
             for (let i = 0; i < needed; i++) {
@@ -848,15 +1167,6 @@ function normalizeRows() {
                     width: 1,
                     isSpace: true
                 });
-            }
-        } else if (currentWidth > appState.rowCapacity) {
-            // Remove spaces from right to left to fit the capacity
-            for (let i = row.breakers.length - 1; i >= 0; i--) {
-                if (row.breakers[i].isSpace || row.breakers[i].category === 'vide') {
-                    currentWidth -= row.breakers[i].width;
-                    row.breakers.splice(i, 1);
-                    if (currentWidth <= appState.rowCapacity) break;
-                }
             }
         }
     });
@@ -868,6 +1178,7 @@ function renderAll() {
     renderPreview();
     renderTestGrid();
     renderColorLegendsPreview();
+    renderCommentsPreview();
     window.renderInspector();
 }
 
@@ -894,41 +1205,15 @@ function renderConfigurator() {
         list.appendChild(rowDiv);
 
         const modulesList = document.getElementById(`modules-list-${row.id}`);
-        
-        modulesList.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const draggingEl = document.querySelector('.module-outline-item.dragging-sidebar');
-            if (draggingEl) {
-                const targetEl = e.target.closest('.module-outline-item');
-                if (targetEl && targetEl !== draggingEl) {
-                    const rect = targetEl.getBoundingClientRect();
-                    const next = (e.clientY - rect.top) > (rect.height / 2);
-                    modulesList.insertBefore(draggingEl, next ? targetEl.nextSibling : targetEl);
-                } else if (!targetEl) {
-                    modulesList.appendChild(draggingEl);
-                }
-            }
-        });
 
         row.breakers.forEach((breaker) => {
             if (breaker.isSpace || breaker.category === 'vide') return; // Skip space elements in outline checklist
 
             const breakDiv = document.createElement('div');
             breakDiv.className = 'module-outline-item';
-            breakDiv.draggable = true;
+            breakDiv.draggable = false;
             breakDiv.dataset.breakerId = breaker.id;
             breakDiv.dataset.rowId = row.id;
-            
-            breakDiv.addEventListener('dragstart', (e) => {
-                breakDiv.classList.add('dragging-sidebar');
-                e.stopPropagation();
-            });
-
-            breakDiv.addEventListener('dragend', (e) => {
-                breakDiv.classList.remove('dragging-sidebar');
-                syncStateFromDOM();
-                e.stopPropagation();
-            });
 
             breakDiv.addEventListener('click', (e) => {
                 window.selectBreaker(row.id, breaker.id, e);
@@ -941,8 +1226,7 @@ function renderConfigurator() {
 
             breakDiv.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="color: var(--text-muted); cursor: grab; font-size: 0.85rem;">☰</span>
-                    <strong style="color: #60a5fa;">${getCategoryLabel(breaker.category)}</strong>
+                    <strong style="color: #60a5fa;">${breaker.customBrand || getCategoryLabel(breaker.category)}</strong>
                     <span class="outline-desc" style="color: var(--text-muted); font-size: 0.75rem; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         ${breaker.description ? `- ${breaker.description}` : ''}
                     </span>
@@ -1025,7 +1309,7 @@ function renderPreview() {
     const board = document.getElementById('panel-board-preview');
     board.innerHTML = '';
 
-    appState.rows.forEach(row => {
+    appState.rows.forEach((row, rowIndex) => {
         const rowEl = document.createElement('div');
         rowEl.className = 'din-rail-row';
         rowEl.dataset.rowId = row.id;
@@ -1058,12 +1342,8 @@ function renderPreview() {
         row.breakers.forEach((breaker) => {
             const breakerEl = document.createElement('div');
             
-            let breakerColorStyle = '';
             let breakerColorClass = '';
-            if (breaker.color === 'custom') {
-                const h = breaker.customHue || 120;
-                breakerColorStyle = `background-color: hsl(${h}, 90%, 96%) !important; border-color: hsl(${h}, 75%, 80%) !important;`;
-            } else if (breaker.color !== 'none') {
+            if (breaker.color !== 'custom' && breaker.color !== 'none') {
                 breakerColorClass = `tint-${breaker.color}`;
             }
 
@@ -1071,11 +1351,15 @@ function renderPreview() {
             const hasIpClass = hasIp ? 'has-ip' : '';
 
             // Handle custom width attribute
-            let defaultWidth = 1;
-            if (breaker.category === 'differentiel' || breaker.category === 'wattmetre' || breaker.category === 'prise_modulaire') {
-                defaultWidth = 2;
+            const width = getBreakerWidth(breaker);
+            breakerEl.style.setProperty('--module-width', width);
+
+            // Apply custom HSL color properties safely without overwriting other style properties
+            if (breaker.color === 'custom') {
+                const h = breaker.customHue || 120;
+                breakerEl.style.setProperty('background-color', `hsl(${h}, 90%, 96%)`, 'important');
+                breakerEl.style.setProperty('border-color', `hsl(${h}, 75%, 80%)`, 'important');
             }
-            const width = breaker.width || defaultWidth;
             
             if (breaker.wired === undefined) {
                 breaker.wired = !!breaker.on;
@@ -1128,8 +1412,6 @@ function renderPreview() {
                 breakerEl.className = `module-device module-breaker w-${width} ${breakerColorClass} ${hasIpClass} ${isUnusedClass} ${isWiredClass}`;
             }
             modulesCount += width;
-
-            if (breakerColorStyle) breakerEl.setAttribute('style', breakerColorStyle);
 
             breakerEl.draggable = true;
             breakerEl.dataset.breakerId = breaker.id;
@@ -1239,7 +1521,7 @@ function renderPreview() {
             } else {
                 let iconHtml = '';
                 if (breaker.type === 'custom') {
-                    if (breaker.customIconType === 'file' && breaker.customIconValue) {
+                    if ((breaker.customIconType === 'file' || breaker.customIconType === 'url') && breaker.customIconValue) {
                         iconHtml = `<img src="${breaker.customIconValue}" alt="icon">`;
                     } else {
                         iconHtml = `<span class="emoji-icon">${breaker.customIconValue || '⚙️'}</span>`;
@@ -1256,19 +1538,28 @@ function renderPreview() {
                 `;
             }
 
-            let labelDescriptionHtml = breaker.description || '&nbsp;';
+            let labelDescriptionHtml = '&nbsp;';
             if (breaker.category === 'differentiel') {
                 labelDescriptionHtml = `Type ${breaker.type || 'AC'}`;
+            } else {
+                labelDescriptionHtml = formatDescriptionHtml(breaker.description);
+            }
+
+            let commentBadgeHtml = '';
+            if (breaker.comment) {
+                const uid = getElementUID(row, breaker, rowIndex);
+                commentBadgeHtml = `<div class="device-comment-uid" style="font-size: 6.5px; font-weight: bold; color: ${getBreakerColor(breaker)}; margin-top: 1px;">*${uid}</div>`;
             }
 
             breakerEl.innerHTML = `
                 ${tensionBadgeHtml}
-                <div class="device-brand">${getCategoryLabel(breaker.category)}</div>
+                <div class="device-brand">${breaker.customBrand || getCategoryLabel(breaker.category)}</div>
                 ${elementBodyHtml}
                 <div class="device-label-area">
                     ${connectedBadgeHtml}
                     <span class="device-rating">${breaker.rating}</span>
                     <div class="device-description" title="${breaker.description}">${labelDescriptionHtml}</div>
+                    ${commentBadgeHtml}
                     ${breaker.connected && breaker.connectedType === 'wifi' && breaker.connectedIp ? `<span class="device-ip">${breaker.connectedIp}</span>` : ''}
                 </div>
             `;
@@ -1290,6 +1581,7 @@ function renderPreview() {
     
     const d = new Date(appState.projectDate);
     document.getElementById('cartouche-date').innerText = isNaN(d.getTime()) ? appState.projectDate : d.toLocaleDateString('fr-FR');
+    setTimeout(adjustDescriptionFontSizes, 0);
 }
 
 // Render manual inspection log table (4 columns of Date du test with N° index)
@@ -1707,7 +1999,7 @@ function syncStateFromDOM() {
 
     appState.rows = newRows;
     window.saveState();
-    renderConfigurator();
+    renderAll();
 }
 
 window.cycleContactorState = function(rowId, breakerId) {
@@ -1748,6 +2040,7 @@ window.addBreaker = function(rowId) {
             type: 'socket',
             description: '',
             on: true,
+            wired: true,
             color: 'none',
             customHue: 120,
             customIconType: 'none',
@@ -1786,30 +2079,19 @@ window.deleteBreaker = function(rowId, breakerId) {
         const index = row.breakers.findIndex(b => b.id === breakerId);
         if (index !== -1) {
             const breaker = row.breakers[index];
-            const width = breaker.width || 1;
+            const width = getBreakerWidth(breaker);
             
-            // Create a space element to replace it
-            const newSpace = {
-                id: Math.floor(Math.random() * 100000000),
-                category: 'vide',
-                width: width,
-                isSpace: true
-            };
-            
-            row.breakers[index] = newSpace;
-            
-            // Merge adjacent spaces to keep list tidy
-            let i = 0;
-            while (i < row.breakers.length - 1) {
-                const cur = row.breakers[i];
-                const nxt = row.breakers[i + 1];
-                if ((cur.isSpace || cur.category === 'vide') && (nxt.isSpace || nxt.category === 'vide')) {
-                    cur.width += nxt.width;
-                    row.breakers.splice(i + 1, 1);
-                } else {
-                    i++;
-                }
+            // Create space elements of width 1 to replace it
+            const spaces = [];
+            for (let k = 0; k < width; k++) {
+                spaces.push({
+                    id: Math.floor(Math.random() * 100000000),
+                    category: 'vide',
+                    width: 1,
+                    isSpace: true
+                });
             }
+            row.breakers.splice(index, 1, ...spaces);
         }
         window.saveState();
         renderAll();
@@ -1822,10 +2104,10 @@ window.updateBreaker = function(rowId, breakerId, prop, value) {
         const index = row.breakers.findIndex(b => b.id === breakerId);
         if (index !== -1) {
             const breaker = row.breakers[index];
-            const oldWidth = breaker.width || 1;
+            const oldWidth = getBreakerWidth(breaker);
             
             if (prop === 'width' || prop === 'category') {
-                let newWidth = breaker.width || 1;
+                let newWidth = getBreakerWidth(breaker);
                 if (prop === 'width') {
                     newWidth = parseInt(value);
                 } else if (prop === 'category') {
@@ -1881,13 +2163,16 @@ window.updateBreaker = function(rowId, breakerId, prop, value) {
                     } else if (diff < 0) {
                         // Shrinking: spawn space elements next to it
                         const spawnWidth = Math.abs(diff);
-                        const newSpace = {
-                            id: Math.floor(Math.random() * 100000000),
-                            category: 'vide',
-                            width: spawnWidth,
-                            isSpace: true
-                        };
-                        row.breakers.splice(index + 1, 0, newSpace);
+                        const spaces = [];
+                        for (let k = 0; k < spawnWidth; k++) {
+                            spaces.push({
+                                id: Math.floor(Math.random() * 100000000),
+                                category: 'vide',
+                                width: 1,
+                                isSpace: true
+                            });
+                        }
+                        row.breakers.splice(index + 1, 0, ...spaces);
                     }
                 }
             }
@@ -1897,6 +2182,11 @@ window.updateBreaker = function(rowId, breakerId, prop, value) {
                 breaker.on = value;
             } else if (prop === 'on') {
                 breaker.wired = value;
+            } else if (prop === 'unused') {
+                if (!value) {
+                    breaker.wired = true;
+                    breaker.on = true;
+                }
             } else if (prop === 'category') {
                 if (value === 'differentiel' || value === 'wattmetre' || value === 'prise_modulaire') {
                     breaker.width = 2;
@@ -1991,6 +2281,11 @@ window.renderInspector = function() {
                     b.on = value;
                 } else if (prop === 'on') {
                     b.wired = value;
+                } else if (prop === 'unused') {
+                    if (!value) {
+                        b.wired = true;
+                        b.on = true;
+                    }
                 } else if (prop === 'category') {
                     if (value === 'differentiel' || value === 'wattmetre' || value === 'prise_modulaire') {
                         b.width = 2;
@@ -2023,6 +2318,8 @@ window.renderInspector = function() {
     const sharedCustomHue = getSharedValue('customHue', 120);
     const sharedConnectedType = getSharedValue('connectedType', 'mixed');
     const sharedConnectedIp = getSharedValue('connectedIp', '');
+    const sharedCustomBrand = getSharedValue('customBrand', '') || '';
+    const sharedComment = getSharedValue('comment', '') || '';
 
     const allUnused = selectedList.every(b => b.unused);
     const mixedUnused = !allUnused && selectedList.some(b => b.unused);
@@ -2068,13 +2365,18 @@ window.renderInspector = function() {
     }
 
     html += `
+            <div class="form-group">
+                <label>Marque / En-tête (Optionnel)</label>
+                <input type="text" id="inspector-custom-brand" value="${sharedCustomBrand}" placeholder="${isMixed('customBrand') ? 'Mixte / Valeurs différentes' : getCategoryLabel(sharedCategory)}">
+            </div>
+
             <!-- Mode Status Group -->
             <div class="form-group" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 15px;">
-                <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; margin-bottom: 8px; user-select: none;">
+                <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; margin-bottom: ${allUnused ? '8px' : '0'}; user-select: none;">
                     <input type="checkbox" id="inspector-unused" style="width: auto;" ${allUnused ? 'checked' : ''}>
                     <span>Mode Réserve (Non utilisé) ⚙ ${mixedUnused ? '<span style="font-size:0.65rem;color:var(--text-muted);">(Mixte)</span>' : ''}</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; user-select: none; margin-bottom: 0;">
+                <label id="inspector-wired-container" style="display: ${allUnused ? 'flex' : 'none'}; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; user-select: none; margin-bottom: 0;">
                     <input type="checkbox" id="inspector-wired" style="width: auto;" ${allWired ? 'checked' : ''}>
                     <span>Câblé / Branché (Sous tension) ⚡ ${mixedWired ? '<span style="font-size:0.65rem;color:var(--text-muted);">(Mixte)</span>' : ''}</span>
                 </label>
@@ -2082,7 +2384,12 @@ window.renderInspector = function() {
 
             <div class="form-group">
                 <label>Description</label>
-                <input type="text" id="inspector-description" value="${sharedDescription}" placeholder="${isMixed('description') ? 'Mixte / Valeurs différentes' : 'Ex: Éclairage Salon'}">
+                <textarea id="inspector-description" rows="1" style="resize: none; overflow-y: hidden; min-height: 38px;" placeholder="${isMixed('description') ? 'Mixte / Valeurs différentes' : 'Ex: Éclairage Salon'}">${sharedDescription}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Commentaire (Optionnel)</label>
+                <textarea id="inspector-comment" rows="1" style="resize: none; overflow-y: hidden; min-height: 38px;" placeholder="${isMixed('comment') ? 'Mixte / Valeurs différentes' : 'Ex: Alimentation plaque cuisson'}">${sharedComment}</textarea>
             </div>
 
             <div class="form-group">
@@ -2181,12 +2488,16 @@ window.renderInspector = function() {
                         ${sharedCustomIconType === 'mixed' ? '<option value="mixed" selected disabled>Mixte / Valeurs différentes</option>' : ''}
                         <option value="emoji" ${sharedCustomIconType === 'emoji' ? 'selected' : ''}>Emoji</option>
                         <option value="file" ${sharedCustomIconType === 'file' ? 'selected' : ''}>Image (Fichier)</option>
+                        <option value="url" ${sharedCustomIconType === 'url' ? 'selected' : ''}>Image (Lien URL)</option>
                     </select>
                     
                     ${sharedCustomIconType === 'file' ? `
                         <label style="margin-top: 8px;">Fichier Image</label>
                         <input type="file" id="inspector-custom-icon-file" accept="image/*">
                         ${sharedCustomIconValue ? `<p style="font-size: 0.65rem; color: var(--accent); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Fichier chargé</p>` : ''}
+                    ` : sharedCustomIconType === 'url' ? `
+                        <label style="margin-top: 8px;">Lien URL de l'image</label>
+                        <input type="text" id="inspector-custom-icon-url" value="${sharedCustomIconValue}" placeholder="${isMixed('customIconValue') ? 'Mixte' : 'https://example.com/icon.png'}">
                     ` : `
                         <label style="margin-top: 8px;">Emoji</label>
                         <input type="text" id="inspector-custom-icon-emoji" value="${sharedCustomIconValue}" placeholder="${isMixed('customIconValue') ? 'Mixte' : '⚙️'}" maxLength="2">
@@ -2304,6 +2615,13 @@ window.renderInspector = function() {
     html += `</div>`;
     container.innerHTML = html;
 
+    // Auto-adapt description textarea height initially
+    const initDesc = document.getElementById('inspector-description');
+    if (initDesc) {
+        initDesc.style.height = 'auto';
+        initDesc.style.height = initDesc.scrollHeight + 'px';
+    }
+
     // Apply checkbox indeterminate states for mixed selections
     const chkUnused = document.getElementById('inspector-unused');
     if (chkUnused && mixedUnused) chkUnused.indeterminate = true;
@@ -2317,7 +2635,17 @@ window.renderInspector = function() {
     // Attach listeners
     const elUnused = document.getElementById('inspector-unused');
     if (elUnused) elUnused.addEventListener('change', (e) => {
-        setGroupProperty('unused', e.target.checked);
+        const isChecked = e.target.checked;
+        const wiredContainer = document.getElementById('inspector-wired-container');
+        const chkWired = document.getElementById('inspector-wired');
+        if (wiredContainer) {
+            wiredContainer.style.display = isChecked ? 'flex' : 'none';
+            elUnused.parentElement.style.marginBottom = isChecked ? '8px' : '0';
+        }
+        if (!isChecked && chkWired) {
+            chkWired.checked = true;
+        }
+        setGroupProperty('unused', isChecked);
     });
 
     const elWired = document.getElementById('inspector-wired');
@@ -2333,6 +2661,10 @@ window.renderInspector = function() {
     const elDescription = document.getElementById('inspector-description');
     if (elDescription) {
         elDescription.addEventListener('input', (e) => {
+            // Auto-adapt height on type
+            e.target.style.height = 'auto';
+            e.target.style.height = e.target.scrollHeight + 'px';
+
             selectedList.forEach(b => {
                 b.description = e.target.value;
                 const descPreviewEl = document.querySelector(`.module-device[data-breaker-id="${b.id}"] .device-description`);
@@ -2340,8 +2672,9 @@ window.renderInspector = function() {
                     if (b.category === 'differentiel') {
                         descPreviewEl.innerHTML = `Type ${b.type || 'AC'}`;
                     } else {
-                        descPreviewEl.innerText = e.target.value || '';
+                        descPreviewEl.innerHTML = formatDescriptionHtml(e.target.value);
                     }
+                    adjustDescriptionFontSizes();
                     descPreviewEl.title = e.target.value || '';
                 }
                 const outlineDescEl = document.querySelector(`.module-outline-item[data-breaker-id="${b.id}"] .outline-desc`);
@@ -2351,6 +2684,44 @@ window.renderInspector = function() {
             });
         });
         elDescription.addEventListener('change', () => {
+            window.saveState();
+        });
+    }
+
+    const elCustomBrand = document.getElementById('inspector-custom-brand');
+    if (elCustomBrand) {
+        elCustomBrand.addEventListener('input', (e) => {
+            selectedList.forEach(b => {
+                b.customBrand = e.target.value;
+                const brandPreviewEl = document.querySelector(`.module-device[data-breaker-id="${b.id}"] .device-brand`);
+                if (brandPreviewEl) {
+                    brandPreviewEl.innerText = e.target.value || getCategoryLabel(b.category);
+                }
+            });
+            adjustDescriptionFontSizes();
+        });
+        elCustomBrand.addEventListener('change', () => {
+            window.saveState();
+            renderConfigurator(); // Update left sidebar listing brand text
+        });
+    }
+
+    const elComment = document.getElementById('inspector-comment');
+    if (elComment) {
+        elComment.style.height = 'auto';
+        elComment.style.height = elComment.scrollHeight + 'px';
+
+        elComment.addEventListener('input', (e) => {
+            e.target.style.height = 'auto';
+            e.target.style.height = e.target.scrollHeight + 'px';
+
+            selectedList.forEach(b => {
+                b.comment = e.target.value;
+            });
+            renderCommentsPreview();
+            renderPreview();
+        });
+        elComment.addEventListener('change', () => {
             window.saveState();
         });
     }
@@ -2434,6 +2805,23 @@ window.renderInspector = function() {
         });
         elCustomIconEmoji.addEventListener('change', () => {
             window.saveState();
+        });
+    }
+
+    const elCustomIconUrl = document.getElementById('inspector-custom-icon-url');
+    if (elCustomIconUrl) {
+        elCustomIconUrl.addEventListener('input', (e) => {
+            selectedList.forEach(b => {
+                b.customIconValue = e.target.value;
+                const iconPreviewEl = document.querySelector(`.module-device[data-breaker-id="${b.id}"] .device-type-icon img`);
+                if (iconPreviewEl) {
+                    iconPreviewEl.src = e.target.value;
+                }
+            });
+        });
+        elCustomIconUrl.addEventListener('change', () => {
+            window.saveState();
+            renderAll();
         });
     }
 
