@@ -107,13 +107,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Metadata changes
-    ['project-title', 'project-address', 'project-installer', 'project-date'].forEach(id => {
+    ['project-title', 'project-address', 'project-installer', 'project-date', 'project-general-comment'].forEach(id => {
         const input = document.getElementById(id);
         input.addEventListener('input', (e) => {
             if (id === 'project-title') appState.projectTitle = e.target.value;
             if (id === 'project-address') appState.projectAddress = e.target.value;
             if (id === 'project-installer') appState.projectInstaller = e.target.value;
             if (id === 'project-date') appState.projectDate = e.target.value;
+            if (id === 'project-general-comment') {
+                appState.generalComment = e.target.value;
+                renderCommentsPreview();
+            }
 
             const cartText = document.getElementById(id.replace('project-', 'cartouche-'));
             if (cartText) {
@@ -181,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('project-address').value = '';
             document.getElementById('project-installer').value = '';
             document.getElementById('project-date').value = appState.projectDate;
+            document.getElementById('project-general-comment').value = '';
             document.getElementById('page-format').value = 'A4-landscape';
             document.getElementById('custom-dimensions-row').style.display = 'none';
             document.getElementById('row-modules-capacity').value = 13;
@@ -814,6 +819,7 @@ function restoreStateToUI() {
     document.getElementById('project-address').value = appState.projectAddress || "";
     document.getElementById('project-installer').value = appState.projectInstaller || "";
     document.getElementById('project-date').value = appState.projectDate || new Date().toISOString().split('T')[0];
+    document.getElementById('project-general-comment').value = appState.generalComment || "";
     
     // Restore page format & custom dimensions values
     if (appState.pageFormat) {
@@ -1094,22 +1100,41 @@ function renderCommentsPreview() {
         });
     });
 
-    if (commentedBreakers.length === 0) {
+    const hasGeneral = appState.generalComment && appState.generalComment.trim();
+
+    if (commentedBreakers.length === 0 && !hasGeneral) {
         container.style.display = 'none';
         list.innerHTML = '';
         return;
     }
 
     container.style.display = 'block';
-    list.innerHTML = commentedBreakers.map(item => {
+    
+    let htmlContent = '';
+    
+    if (hasGeneral) {
+        const generalLines = appState.generalComment.trim().split('\n');
+        htmlContent += generalLines.map(line => {
+            return `
+                <div style="display: flex; gap: 8px; line-height: 1.2; margin-bottom: 3px;">
+                    <strong style="color: #475569; min-width: 45px; flex-shrink: 0;">* Note :</strong>
+                    <span style="color: #334155; font-weight: 500;">${line}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    htmlContent += commentedBreakers.map(item => {
         const color = getBreakerColor(item.breaker);
         return `
             <div style="display: flex; gap: 8px; line-height: 1.2;">
-                <strong style="color: ${color}; min-width: 45px; flex-shrink: 0;">*${item.uid} :</strong>
+                <strong style="color: ${color}; min-width: 45px; flex-shrink: 0;"><span style="text-decoration: underline;">*${item.uid}</span> :</strong>
                 <span style="color: #334155;">${item.comment}</span>
             </div>
         `;
     }).join('');
+
+    list.innerHTML = htmlContent;
 }
 
 function normalizeRows() {
@@ -1548,7 +1573,7 @@ function renderPreview() {
             let commentBadgeHtml = '';
             if (breaker.comment) {
                 const uid = getElementUID(row, breaker, rowIndex);
-                commentBadgeHtml = `<div class="device-comment-uid" style="font-size: 6.5px; font-weight: bold; color: ${getBreakerColor(breaker)}; margin-top: 1px;">*${uid}</div>`;
+                commentBadgeHtml = `<div class="device-comment-uid" style="font-size: 6.5px; font-weight: bold; color: ${getBreakerColor(breaker)}; margin-top: 1px; text-decoration: underline;">*${uid}</div>`;
             }
 
             breakerEl.innerHTML = `
@@ -2735,8 +2760,11 @@ window.renderInspector = function() {
     const elRatingCustom = document.getElementById('inspector-rating-custom');
     if (elRating) elRating.addEventListener('change', (e) => {
         if (e.target.value === 'custom') {
-            if (elRatingCustom) elRatingCustom.style.display = 'block';
-            setGroupProperty('rating', elRatingCustom ? elRatingCustom.value : '25A');
+            if (elRatingCustom) {
+                elRatingCustom.style.display = 'block';
+                elRatingCustom.value = '';
+                elRatingCustom.focus();
+            }
         } else {
             if (elRatingCustom) elRatingCustom.style.display = 'none';
             setGroupProperty('rating', e.target.value);
@@ -2753,8 +2781,8 @@ window.renderInspector = function() {
                 }
             });
         });
-        elRatingCustom.addEventListener('change', () => {
-            window.saveState();
+        elRatingCustom.addEventListener('change', (e) => {
+            setGroupProperty('rating', e.target.value);
         });
     }
 
