@@ -1,4 +1,4 @@
-# ⚡ Tableau Électrique - Configurateur Interactif
+[# ⚡ Tableau Électrique - Configurateur Interactif](https://traycken.github.io/Tableau-Electrique/)
 
 Un configurateur web moderne, réactif et épuré pour concevoir, documenter et imprimer des schémas d'implantation de tableaux de distribution électrique (format DIN). 
 
