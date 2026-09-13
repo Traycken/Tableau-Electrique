@@ -71,3 +71,12 @@ Pour obtenir un rendu parfait lors de l'exportation en PDF (via la fonction Impr
 1. Choisissez la **Mise en page** (Paysage ou Portrait) correspondant à votre **Format de l'Imprimeur** configuré dans la barre latérale.
 2. Activez l'option **Graphismes d'arrière-plan** dans les paramètres avancés de l'impression pour conserver les couleurs des disjoncteurs et le motif des modules de réserve.
 3. Désactivez les **En-têtes et pieds de page** fournis par le navigateur pour masquer les URL et dates système parasites.
+
+<!-- auto-github-signature-start -->
+---
+*Synchronisé automatiquement avec [Auto-Github](https://github.com/Traycken/Auto-Github)*
+
+[![Auto-Github](https://img.shields.io/badge/Auto--Github-Automated-blue?style=flat-square&logo=github)](https://github.com/Traycken/Auto-Github)
+
+[![Traycken](https://img.shields.io/badge/Traycken-Dev-red?style=flat-square&logo=github)](https://github.com/Traycken)
+<!-- auto-github-signature-end -->
